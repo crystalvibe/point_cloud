@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Desapex</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --primary: #002B7F;
+            --primary-light: #4B6BFD;
+            --dark: #0A0F1D;
+            --light: #ffffff;
+            --gradient-1: linear-gradient(135deg, #4B6BFD, #2B3ADF);
+            --gradient-2: linear-gradient(135deg, #4361E8, #2736D9);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo-section img {
+            height: 40px;
+            width: auto;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-grow: 1;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-link.active {
+            background: var(--gradient-1);
+            color: white;
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+        }
+
+        /* Main Content */
+        .main-wrapper {
+            flex-grow: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .content-area {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 280px));
+            gap: 1.5rem;
+        }
+
+        .cloud-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            max-width: 280px;
+        }
+
+        .cloud-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .cloud-preview {
+            height: 140px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cloud-icon {
+            font-size: 4rem;
+            color: var(--primary-light);
+        }
+
+        .cloud-info {
+            padding: 1.5rem;
+        }
+
+        .cloud-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .cloud-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .cloud-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cloud-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .view-btn {
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: var(--gradient-1);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn:hover {
+            background: var(--gradient-2);
+            transform: translateY(-2px);
+        }
+
+        .upload-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--gradient-1);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            background: var(--gradient-2);
+            transform: translateY(-2px);
+        }
+
+        .bottom-nav {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logout-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        /* Test Version Ribbon */
+        .test-ribbon {
+            position: fixed;
+            top: 20px;
+            right: -50px;
+            width: 200px;
+            padding: 8px;
+            background: #ff4d4d;
+            color: white;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            transform: rotate(45deg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .test-ribbon::before {
+            content: 'TEST VERSION';
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 80px;
+                padding: 1rem;
+            }
+
+            .logo-text, .nav-link span, .user-info {
+                display: none;
+            }
+
+            .main-wrapper {
+                margin-left: 80px;
+                padding: 1rem;
+            }
+
+            .content-area {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .bottom-nav {
+                padding-top: 0.5rem;
+            }
+
+            .logout-btn {
+                padding: 0.8rem;
+            }
+
+            .logout-btn span {
+                display: none;
+            }
+        }
+
+        /* Add custom popup styles */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .popup-content {
+            background: var(--dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+            animation: popupIn 0.3s ease;
+        }
+
+        @keyframes popupIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .popup-icon {
+            font-size: 3rem;
+            color: #ff4d4d;
+            margin-bottom: 1rem;
+        }
+
+        .popup-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+
+        .popup-message {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1.5rem;
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .popup-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .popup-btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .popup-btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .popup-btn-delete {
+            background: #ff4d4d;
+            color: white;
+        }
+
+        .popup-btn-delete:hover {
+            background: #ff3333;
+            transform: translateY(-2px);
+        }
+
+        /* Add edit popup styles */
+        .edit-form {
+            margin: 1.5rem 0;
+        }
+
+        .edit-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .edit-input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .popup-btn-save {
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .popup-btn-save:hover {
+            background: var(--gradient-2);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-ribbon"></div>
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo-section">
+            <img src="assets/images/desapex-logo.png" alt="Desapex Logo">
+            <span class="logo-text">Desapex</span>
+        </div>
+        
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-link active">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="upload.html" class="nav-link">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Upload New Video</span>
+            </a>
+            <a href="#" class="nav-link">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="bottom-nav">
+            <button class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-wrapper">
+        <div class="top-bar">
+            <h1 class="page-title">Your Point Clouds</h1>
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <span class="user-name"></span>
+                    <span class="user-email"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <!-- Recent Upload Card -->
+            <div class="cloud-card">
+                <div class="cloud-preview">
+                    <i class="fas fa-video cloud-icon"></i>
+                </div>
+                <div class="cloud-info">
+                    <h3 class="cloud-title">Recently Uploaded 360° Video</h3>
+                    <div class="cloud-meta">
+                        <span><i class="far fa-clock"></i> Uploaded: Just now</span>
+                    </div>
+                    <div class="cloud-actions">
+                        <a href="#" class="view-btn">
+                            <i class="fas fa-eye"></i>
+                            View Video
+                        </a>
+                        <a href="viewer.html" class="view-btn">
+                            <i class="fas fa-cube"></i>
+                            View in Point
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add popup HTML -->
+    <div class="popup-overlay" id="deletePopup">
+        <div class="popup-content">
+            <i class="fas fa-exclamation-triangle popup-icon"></i>
+            <h3 class="popup-title">Delete Project?</h3>
+            <p class="popup-message">This action cannot be undone. Are you sure you want to delete this project?</p>
+            <div class="popup-buttons">
+                <button class="popup-btn popup-btn-cancel" onclick="closeDeletePopup()">Cancel</button>
+                <button class="popup-btn popup-btn-delete" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add edit popup HTML -->
+    <div class="popup-overlay" id="editPopup">
+        <div class="popup-content">
+            <i class="fas fa-edit popup-icon" style="color: var(--primary-light)"></i>
+            <h3 class="popup-title">Edit Project Name</h3>
+            <div class="edit-form">
+                <input type="text" id="editProjectName" class="edit-input" placeholder="Enter new project name">
+            </div>
+            <div class="popup-buttons">
+                <button class="popup-btn popup-btn-cancel" onclick="closeEditPopup()">Cancel</button>
+                <button class="popup-btn popup-btn-save" onclick="confirmEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load user info from localStorage
+            const userEmail = localStorage.getItem('userEmail');
+            const userName = localStorage.getItem('userName');
+
+            if (!userEmail) {
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            // Update user info
+            const userNameElements = document.querySelectorAll('.user-name');
+            const userEmailElements = document.querySelectorAll('.user-email');
+            
+            userNameElements.forEach(element => {
+                element.textContent = userName || userEmail.split('@')[0];
+            });
+            
+            userEmailElements.forEach(element => {
+                element.textContent = userEmail;
+            });
+
+            // Load and display projects
+            loadProjects();
+
+            // Handle logout
+            const logoutBtn = document.querySelector('.logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userName');
+                    window.location.href = 'auth.html';
+                });
+            }
+        });
+
+        // Function to load projects from localStorage
+        function loadProjects() {
+            const contentArea = document.querySelector('.content-area');
+            const userEmail = localStorage.getItem('userEmail');
+            const userProjects = JSON.parse(localStorage.getItem(`projects_${userEmail}`)) || [];
+            
+            // Clear existing content
+            contentArea.innerHTML = '';
+
+            // Add projects
+            userProjects.forEach(project => {
+                const card = createProjectCard(project);
+                contentArea.appendChild(card);
+            });
+        }
+
+        // Function to create a project card
+        function createProjectCard(project) {
+            const card = document.createElement('div');
+            card.className = 'cloud-card';
+            card.innerHTML = `
+                <div class="cloud-preview">
+                    <i class="fas fa-video cloud-icon"></i>
+                </div>
+                <div class="cloud-info">
+                    <div class="cloud-title-wrapper">
+                        <h3 class="cloud-title">${project.name}</h3>
+                        <div class="project-actions">
+                            <button onclick="editProject('${project.id}')" class="action-btn">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteProject('${project.id}')" class="action-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="cloud-meta">
+                        <span><i class="far fa-clock"></i> Uploaded: ${new Date(project.uploadDate).toLocaleString()}</span>
+                    </div>
+                    <div class="cloud-actions">
+                        <a href="#" class="view-btn">
+                            <i class="fas fa-eye"></i>
+                            View Video
+                        </a>
+                        <a href="viewer.html?id=${project.id}" class="view-btn">
+                            <i class="fas fa-cube"></i>
+                            View in Point
+                        </a>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        let projectToDelete = null;
+
+        function deleteProject(projectId) {
+            projectToDelete = projectId;
+            const popup = document.getElementById('deletePopup');
+            popup.style.display = 'flex';
+        }
+
+        function closeDeletePopup() {
+            const popup = document.getElementById('deletePopup');
+            popup.style.display = 'none';
+            projectToDelete = null;
+        }
+
+        function confirmDelete() {
+            if (!projectToDelete) return;
+
+            const userEmail = localStorage.getItem('userEmail');
+            const userProjects = JSON.parse(localStorage.getItem(`projects_${userEmail}`)) || [];
+            const updatedProjects = userProjects.filter(p => p.id !== projectToDelete);
+            localStorage.setItem(`projects_${userEmail}`, JSON.stringify(updatedProjects));
+            
+            closeDeletePopup();
+            loadProjects();
+        }
+
+        // Close popup when clicking outside
+        document.getElementById('deletePopup').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeletePopup();
+            }
+        });
+
+        // Close popup with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeletePopup();
+            }
+        });
+
+        // Add styles for project actions
+        const style = document.createElement('style');
+        style.textContent = `
+            .cloud-title-wrapper {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+            }
+
+            .project-actions {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            .action-btn {
+                background: none;
+                border: none;
+                color: rgba(255, 255, 255, 0.7);
+                cursor: pointer;
+                padding: 0.25rem;
+                border-radius: 4px;
+                transition: all 0.2s ease;
+            }
+
+            .action-btn:hover {
+                color: white;
+                background: rgba(255, 255, 255, 0.1);
+            }
+        `;
+        document.head.appendChild(style);
+
+        let projectToEdit = null;
+
+        function editProject(projectId) {
+            projectToEdit = projectId;
+            const projects = JSON.parse(localStorage.getItem('projects')) || [];
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const editInput = document.getElementById('editProjectName');
+            editInput.value = project.name;
+            
+            const popup = document.getElementById('editPopup');
+            popup.style.display = 'flex';
+            editInput.focus();
+            editInput.select();
+        }
+
+        function closeEditPopup() {
+            const popup = document.getElementById('editPopup');
+            popup.style.display = 'none';
+            projectToEdit = null;
+        }
+
+        function confirmEdit() {
+            if (!projectToEdit) return;
+
+            const newName = document.getElementById('editProjectName').value.trim();
+            if (!newName) {
+                alert('Project name cannot be empty');
+                return;
+            }
+
+            const userEmail = localStorage.getItem('userEmail');
+            const userProjects = JSON.parse(localStorage.getItem(`projects_${userEmail}`)) || [];
+            const project = userProjects.find(p => p.id === projectToEdit);
+            if (project) {
+                project.name = newName;
+                localStorage.setItem(`projects_${userEmail}`, JSON.stringify(userProjects));
+                closeEditPopup();
+                loadProjects();
+            }
+        }
+
+        // Close edit popup when clicking outside
+        document.getElementById('editPopup').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditPopup();
+            }
+        });
+
+        // Handle Enter key in edit input
+        document.getElementById('editProjectName').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                confirmEdit();
+            } else if (e.key === 'Escape') {
+                closeEditPopup();
+            }
+        });
+
+        // Add styles for edit popup
+        const editStyle = document.createElement('style');
+        editStyle.textContent = `
+            .edit-form {
+                margin: 1.5rem 0;
+            }
+
+            .edit-input {
+                width: 100%;
+                padding: 0.75rem 1rem;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                color: white;
+                font-size: 1rem;
+                transition: all 0.3s ease;
+            }
+
+            .edit-input:focus {
+                outline: none;
+                border-color: var(--primary-light);
+                background: rgba(255, 255, 255, 0.08);
+            }
+
+            .popup-btn-save {
+                background: var(--primary-light);
+                color: white;
+            }
+
+            .popup-btn-save:hover {
+                background: var(--gradient-2);
+                transform: translateY(-2px);
+            }
+        `;
+        document.head.appendChild(editStyle);
+    </script>
+</body>
+</html> 
