@@ -33,6 +33,7 @@
 			border-radius: 4px;
 			background: rgba(255, 255, 255, 0.1);
 			color: #fff;
+			
 			cursor: pointer;
 			transition: background 0.2s;
 		}
@@ -77,7 +78,7 @@
 			border-radius: 12px;
 			display: flex;
 			flex-direction: row;
-			gap: 8px;
+			gap: 0px; /* Remove gap to use consistent button margins instead */
 			z-index: 1000;
 			border: 1px solid rgba(255, 255, 255, 0.1);
 			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
@@ -107,6 +108,7 @@
 			align-items: center;
 			justify-content: center;
 			transition: all 0.2s ease;
+			margin: 2px; /* Added consistent margin */
 		}
 
 		.nav-button:hover {
@@ -610,7 +612,7 @@
 			border-radius: 12px;
 			display: flex;
 			flex-direction: row;
-			gap: 8px;
+			gap: 0px; /* Remove gap to use consistent button margins instead */
 			z-index: 1000;
 			border: 1px solid rgba(255, 255, 255, 0.1);
 			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
@@ -866,15 +868,30 @@
 		}
 
 		.viewpoint-item .delete-btn {
-			color: rgba(255, 255, 255, 0.6);
-			padding: 4px;
+			background: rgba(255, 77, 77, 0.15);
+			border: none;
 			border-radius: 4px;
+			width: 24px;
+			height: 24px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer !important;
+			padding: 0;
+			margin-left: 8px;
+			color: #ff6b6b;
 			transition: all 0.2s ease;
+			z-index: 20;
 		}
 
 		.viewpoint-item .delete-btn:hover {
-			color: #ff4d4d;
-			background: rgba(255, 77, 77, 0.1);
+			background: rgba(255, 77, 77, 0.8) !important;
+			color: white !important;
+			transform: scale(1.1);
+		}
+
+		.viewpoint-item .delete-btn i {
+			font-size: 14px;
 		}
 
 		/* Add styles for save viewpoint dialog */
@@ -923,6 +940,13 @@
 		.save-viewpoint-dialog button.cancel {
 			background: rgba(255, 255, 255, 0.1);
 			color: white;
+			font-weight: bold;
+			cursor: pointer;
+			padding: 10px 16px;
+		}
+
+		.save-viewpoint-dialog button.cancel:hover {
+			background: rgba(255, 255, 255, 0.2);
 		}
 
 		.save-viewpoint-dialog button.save {
@@ -1235,6 +1259,42 @@
 			display: block !important;
 			visibility: visible !important;
 			opacity: 1 !important;
+		}
+
+		/* Add styles for the viewpoints panel controls */
+		.viewpoints-controls {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.viewpoints-controls button {
+			background: rgba(255, 77, 77, 0.2);
+			border: none;
+			border-radius: 4px;
+			width: 28px;
+			height: 28px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			color: #ff6b6b;
+			transition: all 0.2s ease;
+		}
+
+		.viewpoints-controls button:hover {
+			background: rgba(255, 77, 77, 0.8);
+			color: white;
+		}
+
+		.viewpoints-controls .close-btn {
+			cursor: pointer;
+			color: rgba(255, 255, 255, 0.7);
+			transition: all 0.2s ease;
+		}
+
+		.viewpoints-controls .close-btn:hover {
+			color: white;
 		}
 	</style>
 </head>
@@ -2243,267 +2303,6 @@
 		}, 100);
 	};
 
-	window.toggleIntensityView = () => {
-		const scene = viewer.scene;
-		const checkIcon = document.querySelector('.dropdown-item[onclick="toggleIntensityView()"] i.check-icon');
-		const dropdownItem = document.querySelector('.dropdown-item[onclick="toggleIntensityView()"]');
-		const rgbCheckIcon = document.querySelector('.dropdown-item[onclick="toggleRGBView()"] i.check-icon');
-		const rgbDropdownItem = document.querySelector('.dropdown-item[onclick="toggleRGBView()"]');
-		const elevationCheckIcon = document.querySelector('.dropdown-item[onclick="toggleElevationView()"] i.check-icon');
-		const elevationDropdownItem = document.querySelector('.dropdown-item[onclick="toggleElevationView()"]');
-
-		// Toggle Intensity view
-		if (checkIcon.style.opacity === '0') {
-			// Store current state before switching to intensity
-			scene.pointclouds.forEach(pointcloud => {
-				if (pointcloud.material) {
-					// Store current state for restoration if needed
-					if (!pointcloud._originalState && pointcloud._previousState) {
-						// If we're coming from elevation mode, keep the saved state
-						pointcloud._originalState = pointcloud._previousState;
-						delete pointcloud._previousState;
-					} else if (!pointcloud._originalState) {
-						// Otherwise save current state
-						pointcloud._originalState = {
-							activeAttributeName: pointcloud.material.activeAttributeName,
-							defines: new Map([...pointcloud.material.defines]),
-							rgbWeight: pointcloud.material.weightRGB,
-							intensityWeight: pointcloud.material.weightIntensity,
-							elevationWeight: pointcloud.material.weightElevation
-						};
-					}
-					
-					// Clear all color type defines
-					pointcloud.material.removeDefine('color_type_rgba');
-					pointcloud.material.removeDefine('color_type_elevation');
-					pointcloud.material.removeDefine('color_type_classification');
-					pointcloud.material.removeDefine('color_type_composite');
-					pointcloud.material.removeDefine('color_type_matcap');
-					
-					// Set pure intensity coloring
-					pointcloud.material.setDefine('color_type_intensity', true);
-					pointcloud.material.activeAttributeName = 'intensity';
-					
-					// Set weights for intensity view
-					pointcloud.material.weightRGB = 0.0;
-					pointcloud.material.weightIntensity = 1.0;
-					pointcloud.material.weightElevation = 0.0;
-					
-					// Force material update
-					pointcloud.material.needsUpdate = true;
-					
-					// Update all underlying octree nodes
-					if (pointcloud.visibleNodes) {
-						for (const node of pointcloud.visibleNodes) {
-							if (node.sceneNode) {
-								node.sceneNode.material = pointcloud.material;
-							}
-						}
-					}
-				}
-			});
-			
-			// Update UI
-			checkIcon.style.opacity = '1';
-			dropdownItem.classList.add('active');
-			
-			// Disable RGB and elevation views
-			rgbCheckIcon.style.opacity = '0';
-			rgbDropdownItem.classList.remove('active');
-			elevationCheckIcon.style.opacity = '0';
-			elevationDropdownItem.classList.remove('active');
-		} else {
-			// Switch back to RGB view
-			scene.pointclouds.forEach(pointcloud => {
-				if (pointcloud.material) {
-					// Restore original state if available
-					if (pointcloud._originalState) {
-						// Restore defines from original state
-						pointcloud.material.defines.clear();
-						for (const [key, value] of pointcloud._originalState.defines) {
-							pointcloud.material.defines.set(key, value);
-						}
-						
-						// Restore active attribute and weights
-						pointcloud.material.activeAttributeName = pointcloud._originalState.activeAttributeName;
-						pointcloud.material.weightRGB = pointcloud._originalState.rgbWeight;
-						pointcloud.material.weightIntensity = pointcloud._originalState.intensityWeight;
-						pointcloud.material.weightElevation = pointcloud._originalState.elevationWeight;
-						
-						// Clean up saved state
-						delete pointcloud._originalState;
-					} else {
-						// Default to RGB view
-						pointcloud.material.removeDefine('color_type_intensity');
-						pointcloud.material.setDefine('color_type_rgba', true);
-						pointcloud.material.activeAttributeName = 'rgba';
-						pointcloud.material.weightRGB = 1.0;
-						pointcloud.material.weightIntensity = 0.0;
-						pointcloud.material.weightElevation = 0.0;
-					}
-					
-					// Force material update
-					pointcloud.material.needsUpdate = true;
-					
-					// Update all underlying octree nodes
-					if (pointcloud.visibleNodes) {
-						for (const node of pointcloud.visibleNodes) {
-							if (node.sceneNode) {
-								node.sceneNode.material = pointcloud.material;
-							}
-						}
-					}
-				}
-			});
-			
-			// Update UI
-			checkIcon.style.opacity = '0';
-			dropdownItem.classList.remove('active');
-			rgbCheckIcon.style.opacity = '1';
-			rgbDropdownItem.classList.add('active');
-		}
-
-		// Force material update for all pointclouds
-		viewer.scene.dispatchEvent({
-			type: 'material_property_changed',
-			target: scene.pointclouds[0]?.material
-		});
-		
-		// Force renderer to update
-		viewer.renderArea.style.opacity = '0.99';
-		setTimeout(() => {
-			viewer.renderArea.style.opacity = '1.0';
-		}, 20);
-	};
-
-	window.toggleElevationView = () => {
-		const scene = viewer.scene;
-		const checkIcon = document.querySelector('.dropdown-item[onclick="toggleElevationView()"] i.check-icon');
-		const dropdownItem = document.querySelector('.dropdown-item[onclick="toggleElevationView()"]');
-		const rgbCheckIcon = document.querySelector('.dropdown-item[onclick="toggleRGBView()"] i.check-icon');
-		const rgbDropdownItem = document.querySelector('.dropdown-item[onclick="toggleRGBView()"]');
-		const intensityCheckIcon = document.querySelector('.dropdown-item[onclick="toggleIntensityView()"] i.check-icon');
-		const intensityDropdownItem = document.querySelector('.dropdown-item[onclick="toggleIntensityView()"]');
-
-		// Toggle Elevation view
-		if (checkIcon.style.opacity === '0') {
-			// Store the current active view state before switching to elevation
-			scene.pointclouds.forEach(pointcloud => {
-				if (pointcloud.material) {
-					// Save current state for later restoration
-					pointcloud._previousState = {
-						activeAttributeName: pointcloud.material.activeAttributeName,
-						defines: new Map([...pointcloud.material.defines]),
-						rgbWeight: pointcloud.material.weightRGB,
-						intensityWeight: pointcloud.material.weightIntensity,
-						elevationWeight: pointcloud.material.weightElevation
-					};
-					
-					// Clear previous coloring modes
-					pointcloud.material.removeDefine('color_type_rgba');
-					pointcloud.material.removeDefine('color_type_intensity');
-					pointcloud.material.removeDefine('color_type_classification');
-					pointcloud.material.removeDefine('color_type_composite');
-					pointcloud.material.removeDefine('color_type_matcap');
-					
-					// Set pure elevation-based coloring
-					pointcloud.material.setDefine('color_type_elevation', true);
-					
-					// Set gradient - using SPECTRAL gradient for clear elevation visualization
-					pointcloud.material.gradient = Potree.Gradients.SPECTRAL;
-					
-					// Reset weights to ensure we're only using elevation
-					pointcloud.material.weightRGB = 0.0;
-					pointcloud.material.weightIntensity = 0.0;
-					pointcloud.material.weightElevation = 1.0;
-					
-					// Force material update
-					pointcloud.material.activeAttributeName = 'elevation';
-					pointcloud.material.needsUpdate = true;
-
-					// Compute elevation range if not already set
-					if (!pointcloud.material._defaultElevationRangeChanged) {
-						const geometry = pointcloud.geometry;
-						if (geometry && geometry.boundingBox) {
-							const min = geometry.boundingBox.min.z;
-							const max = geometry.boundingBox.max.z;
-							pointcloud.material.elevationRange = [min, max];
-						}
-					}
-					
-					// Update all underlying octree nodes to force reload with new material
-					if (pointcloud.visibleNodes) {
-						for (const node of pointcloud.visibleNodes) {
-							if (node.sceneNode) {
-								node.sceneNode.material = pointcloud.material;
-							}
-						}
-					}
-				}
-			});
-			
-			// Update UI
-			checkIcon.style.opacity = '1';
-			dropdownItem.classList.add('active');
-			
-			// Disable RGB and intensity views
-			rgbCheckIcon.style.opacity = '0';
-			rgbDropdownItem.classList.remove('active');
-			intensityCheckIcon.style.opacity = '0';
-			intensityDropdownItem.classList.remove('active');
-		} else {
-			// Restore original RGB colors
-			scene.pointclouds.forEach(pointcloud => {
-				if (pointcloud.material && pointcloud._previousState) {
-					// Restore defines from previous state
-					pointcloud.material.defines.clear();
-					for (const [key, value] of pointcloud._previousState.defines) {
-						pointcloud.material.defines.set(key, value);
-					}
-					
-					// Restore active attribute and weights
-					pointcloud.material.activeAttributeName = pointcloud._previousState.activeAttributeName;
-					pointcloud.material.weightRGB = pointcloud._previousState.rgbWeight;
-					pointcloud.material.weightIntensity = pointcloud._previousState.intensityWeight;
-					pointcloud.material.weightElevation = pointcloud._previousState.elevationWeight;
-					
-					// Clean up saved state
-					delete pointcloud._previousState;
-					
-					// Force material update
-					pointcloud.material.needsUpdate = true;
-					
-					// Update all underlying octree nodes
-					if (pointcloud.visibleNodes) {
-						for (const node of pointcloud.visibleNodes) {
-							if (node.sceneNode) {
-								node.sceneNode.material = pointcloud.material;
-							}
-						}
-					}
-				}
-			});
-			
-			// Update UI
-			checkIcon.style.opacity = '0';
-			dropdownItem.classList.remove('active');
-			rgbCheckIcon.style.opacity = '1';
-			rgbDropdownItem.classList.add('active');
-		}
-
-		// Force material update for all pointclouds
-		viewer.scene.dispatchEvent({
-			type: 'material_property_changed',
-			target: scene.pointclouds[0]?.material
-		});
-		
-		// Force renderer to update
-		viewer.renderArea.style.opacity = '0.99';
-		setTimeout(() => {
-			viewer.renderArea.style.opacity = '1.0';
-		}, 20);
-	};
-
 	window.toggleTransform = function() {
 		const button = document.querySelector('[title="Zoomed in view"]');
 		button.classList.toggle('active');
@@ -2546,7 +2345,7 @@
 		}
 
 		// Initialize savedViewpoints only once
-		const savedViewpoints = localStorage.getItem('savedViewpoints') 
+		let savedViewpoints = localStorage.getItem('savedViewpoints') 
 			? JSON.parse(localStorage.getItem('savedViewpoints')).map(vp => ({
 				...vp,
 				position: new THREE.Vector3(vp.position.x, vp.position.y, vp.position.z),
@@ -2561,9 +2360,18 @@
 			document.getElementById('viewpointName').focus();
 		};
 
-		window.closeSaveViewpointDialog = function() {
+		window.closeSaveViewpointDialog = function(event) {
+			if (event) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			
+			// Remove console.log
 			const dialog = document.getElementById('saveViewpointDialog');
-			dialog.style.display = 'none';
+			if (dialog) {
+				dialog.style.display = 'none';
+			}
+			return false;
 		};
 
 		window.saveViewpoint = function() {
@@ -2624,24 +2432,114 @@
 		};
 
 		window.deleteViewpoint = function(id, event) {
-			event.stopPropagation();
-			savedViewpoints = savedViewpoints.filter(vp => vp.id !== id);
+			if (event) {
+				event.stopPropagation();
+			}
+			
+			// Convert to let if it was const before
+			let savedViewpointsVar = window.savedViewpoints || savedViewpoints;
+			
+			// Filter out the viewpoint with the given id
+			savedViewpointsVar = savedViewpointsVar.filter(vp => vp.id !== id);
+			
+			// Update global references
+			if (window.savedViewpoints) window.savedViewpoints = savedViewpointsVar;
+			savedViewpoints = savedViewpointsVar;
+			
+			// Update the UI
 			updateViewpointsList();
-			localStorage.setItem('savedViewpoints', JSON.stringify(savedViewpoints));
+			
+			// Save to localStorage
+			localStorage.setItem('savedViewpoints', JSON.stringify(savedViewpointsVar));
+			
+			return false; // Prevent any other handlers from executing
 		};
 
 		function updateViewpointsList() {
 			const list = document.getElementById('viewpointList');
+			if (!list) return;
+			
 			list.innerHTML = '';
+			
+			let viewpointsToDisplay = window.savedViewpoints || savedViewpoints;
+			if (!viewpointsToDisplay || !Array.isArray(viewpointsToDisplay)) {
+				console.error("No viewpoints array found");
+				return;
+			}
 
-			savedViewpoints.forEach(viewpoint => {
+			viewpointsToDisplay.forEach(viewpoint => {
+				// Create main container
 				const item = document.createElement('div');
 				item.className = 'viewpoint-item';
-				item.innerHTML = `
-					<span>${viewpoint.name}</span>
-					<i class="fas fa-times delete-btn" onclick="deleteViewpoint(${viewpoint.id}, event)"></i>
-				`;
-				item.onclick = () => loadViewpoint(viewpoint);
+				
+				// Create name span
+				const nameSpan = document.createElement('span');
+				nameSpan.textContent = viewpoint.name;
+				nameSpan.style.flexGrow = '1';
+				item.appendChild(nameSpan);
+				
+				// Create container for the delete button to isolate it from the item click
+				const btnContainer = document.createElement('div');
+				btnContainer.style.position = 'relative';
+				btnContainer.style.zIndex = '20';
+				
+				// Create delete button with better handling
+				const deleteBtn = document.createElement('button');
+				deleteBtn.className = 'delete-btn';
+				deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+				deleteBtn.title = 'Delete viewpoint';
+				
+				// Use direct event handler
+				deleteBtn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					e.preventDefault();
+					
+					// Remove console.log
+					
+					try {
+						// Delete the viewpoint - do a direct localStorage update first
+						const currentViewpoints = JSON.parse(localStorage.getItem('savedViewpoints') || '[]');
+						const updatedViewpoints = currentViewpoints.filter(vp => vp.id !== viewpoint.id);
+						localStorage.setItem('savedViewpoints', JSON.stringify(updatedViewpoints));
+						
+						// Update window global regardless of scope
+						window.savedViewpoints = updatedViewpoints.map(vp => ({
+							...vp,
+							position: new THREE.Vector3(vp.position.x, vp.position.y, vp.position.z),
+							target: new THREE.Vector3(vp.target.x, vp.target.y, vp.target.z)
+						}));
+						
+						// Try to update local variable safely if it exists in this scope
+						if (typeof savedViewpoints !== 'undefined') {
+							try {
+								// Try/catch in case it's a const
+								savedViewpoints = window.savedViewpoints;
+							} catch (e) {
+								// Remove console.log
+							}
+						}
+						
+						// Update UI directly instead of through updateViewpointsList to avoid const issues
+						e.target.closest('.viewpoint-item').remove();
+						
+						// Remove console.log
+					} catch (error) {
+						console.error('Error deleting viewpoint:', error);
+					}
+					
+					return false;
+				});
+				
+				btnContainer.appendChild(deleteBtn);
+				item.appendChild(btnContainer);
+				
+				// Add click handler to load viewpoint (only for the item, not the delete button)
+				item.addEventListener('click', function(e) {
+					if (!e.target.closest('.delete-btn')) {
+						window.loadViewpoint(viewpoint);
+					}
+				});
+				
 				list.appendChild(item);
 			});
 		}
@@ -2945,9 +2843,18 @@
 			document.getElementById('viewpointName').focus();
 		};
 
-		window.closeSaveViewpointDialog = function() {
+		window.closeSaveViewpointDialog = function(event) {
+			if (event) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			
+			// Remove console.log
 			const dialog = document.getElementById('saveViewpointDialog');
-			dialog.style.display = 'none';
+			if (dialog) {
+				dialog.style.display = 'none';
+			}
+			return false;
 		};
 
 		window.saveViewpoint = function() {
@@ -3008,24 +2915,114 @@
 		};
 
 		window.deleteViewpoint = function(id, event) {
-			event.stopPropagation();
-			savedViewpoints = savedViewpoints.filter(vp => vp.id !== id);
+			if (event) {
+				event.stopPropagation();
+			}
+			
+			// Convert to let if it was const before
+			let savedViewpointsVar = window.savedViewpoints || savedViewpoints;
+			
+			// Filter out the viewpoint with the given id
+			savedViewpointsVar = savedViewpointsVar.filter(vp => vp.id !== id);
+			
+			// Update global references
+			if (window.savedViewpoints) window.savedViewpoints = savedViewpointsVar;
+			savedViewpoints = savedViewpointsVar;
+			
+			// Update the UI
 			updateViewpointsList();
-			localStorage.setItem('savedViewpoints', JSON.stringify(savedViewpoints));
+			
+			// Save to localStorage
+			localStorage.setItem('savedViewpoints', JSON.stringify(savedViewpointsVar));
+			
+			return false; // Prevent any other handlers from executing
 		};
 
 		function updateViewpointsList() {
 			const list = document.getElementById('viewpointList');
+			if (!list) return;
+			
 			list.innerHTML = '';
+			
+			let viewpointsToDisplay = window.savedViewpoints || savedViewpoints;
+			if (!viewpointsToDisplay || !Array.isArray(viewpointsToDisplay)) {
+				console.error("No viewpoints array found");
+				return;
+			}
 
-			savedViewpoints.forEach(viewpoint => {
+			viewpointsToDisplay.forEach(viewpoint => {
+				// Create main container
 				const item = document.createElement('div');
 				item.className = 'viewpoint-item';
-				item.innerHTML = `
-					<span>${viewpoint.name}</span>
-					<i class="fas fa-times delete-btn" onclick="deleteViewpoint(${viewpoint.id}, event)"></i>
-				`;
-				item.onclick = () => loadViewpoint(viewpoint);
+				
+				// Create name span
+				const nameSpan = document.createElement('span');
+				nameSpan.textContent = viewpoint.name;
+				nameSpan.style.flexGrow = '1';
+				item.appendChild(nameSpan);
+				
+				// Create container for the delete button to isolate it from the item click
+				const btnContainer = document.createElement('div');
+				btnContainer.style.position = 'relative';
+				btnContainer.style.zIndex = '20';
+				
+				// Create delete button with better handling
+				const deleteBtn = document.createElement('button');
+				deleteBtn.className = 'delete-btn';
+				deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+				deleteBtn.title = 'Delete viewpoint';
+				
+				// Use direct event handler
+				deleteBtn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					e.preventDefault();
+					
+					// Remove console.log
+					
+					try {
+						// Delete the viewpoint - do a direct localStorage update first
+						const currentViewpoints = JSON.parse(localStorage.getItem('savedViewpoints') || '[]');
+						const updatedViewpoints = currentViewpoints.filter(vp => vp.id !== viewpoint.id);
+						localStorage.setItem('savedViewpoints', JSON.stringify(updatedViewpoints));
+						
+						// Update window global regardless of scope
+						window.savedViewpoints = updatedViewpoints.map(vp => ({
+							...vp,
+							position: new THREE.Vector3(vp.position.x, vp.position.y, vp.position.z),
+							target: new THREE.Vector3(vp.target.x, vp.target.y, vp.target.z)
+						}));
+						
+						// Try to update local variable safely if it exists in this scope
+						if (typeof savedViewpoints !== 'undefined') {
+							try {
+								// Try/catch in case it's a const
+								savedViewpoints = window.savedViewpoints;
+							} catch (e) {
+								// Remove console.log
+							}
+						}
+						
+						// Update UI directly instead of through updateViewpointsList to avoid const issues
+						e.target.closest('.viewpoint-item').remove();
+						
+						// Remove console.log
+					} catch (error) {
+						console.error('Error deleting viewpoint:', error);
+					}
+					
+					return false;
+				});
+				
+				btnContainer.appendChild(deleteBtn);
+				item.appendChild(btnContainer);
+				
+				// Add click handler to load viewpoint (only for the item, not the delete button)
+				item.addEventListener('click', function(e) {
+					if (!e.target.closest('.delete-btn')) {
+						window.loadViewpoint(viewpoint);
+					}
+				});
+				
 				list.appendChild(item);
 			});
 		}
@@ -3040,6 +3037,19 @@
 					vp.target = new THREE.Vector3(vp.target.x, vp.target.y, vp.target.z);
 				});
 				updateViewpointsList();
+			}
+		});
+
+		// Add a direct event listener to the cancel button
+		document.addEventListener('DOMContentLoaded', function() {
+			const cancelButton = document.querySelector('#saveViewpointDialog .cancel');
+			if (cancelButton) {
+				cancelButton.addEventListener('click', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+					window.closeSaveViewpointDialog(e);
+					return false;
+				});
 			}
 		});
 	</script>
@@ -3101,9 +3111,16 @@
 					</button>
 				</div>
 			</div>
+			
+			<!-- Map Button -->
+			<button class="nav-button" title="Top View Map" id="mapButton">
+				<i class="fas fa-map"></i>
+			</button>
+			
 			<button class="nav-button" title="Zoomed in view" onclick="toggleTransform()">
 				<i class="fas fa-arrows-alt"></i>
 			</button>
+			
 			<button class="nav-button" title="Fullscreen View" onclick="toggleFullscreenView()">
 				<i class="fas fa-expand-arrows-alt"></i>
 			</button>
@@ -3131,7 +3148,12 @@
 	<div class="saved-viewpoints-panel" id="savedViewpointsPanel">
 		<h3>
 			Saved Viewpoints
-			<i class="fas fa-times" onclick="toggleViewpointsPanel(false)" style="cursor: pointer;"></i>
+			<div class="viewpoints-controls">
+				<button id="clearAllViewpoints" title="Clear All Viewpoints">
+					<i class="fas fa-trash"></i>
+				</button>
+				<i class="fas fa-times close-btn" onclick="toggleViewpointsPanel(false)" title="Close"></i>
+			</div>
 		</h3>
 		<div class="viewpoint-list" id="viewpointList">
 			<!-- Viewpoints will be added here dynamically -->
@@ -3142,8 +3164,8 @@
 		<h3>Save Viewpoint</h3>
 		<input type="text" id="viewpointName" placeholder="Enter viewpoint name">
 		<div class="buttons">
-			<button class="cancel" onclick="closeSaveViewpointDialog()">Cancel</button>
-			<button class="save" onclick="saveViewpoint()">Save</button>
+			<button type="button" class="cancel" id="cancelViewpointBtn">Cancel</button>
+			<button type="button" class="save" onclick="saveViewpoint()">Save</button>
 		</div>
 	</div>
 	
@@ -3487,14 +3509,7 @@
 		
 		// Add a toggle button to the minimal-nav for the map
 		const minimalNav = document.querySelector('.minimal-nav');
-		const mapButton = document.createElement('button');
-		mapButton.className = 'nav-button';
-		mapButton.title = 'Top View Map';
-		mapButton.innerHTML = '<i class="fas fa-map"></i>';
-		
-		// Insert after the divider
-		const divider = minimalNav.querySelector('.nav-separator');
-		minimalNav.insertBefore(mapButton, divider.nextSibling);
+		const mapButton = document.getElementById('mapButton');
 		
 		mapButton.addEventListener('click', () => {
 			mapVisible = !mapVisible;
@@ -3502,9 +3517,6 @@
 			mapButton.classList.toggle('active', mapVisible);
 		});
 		
-		// Initialize state
-		// mapButton.classList.add('active'); // Remove this line to make button inactive by default
-
 		// Drag and drop functionality
 		const dropZone = document.getElementById('dropZone');
 		
@@ -4147,9 +4159,18 @@
 			document.getElementById('viewpointName').focus();
 		};
 
-		window.closeSaveViewpointDialog = function() {
+		window.closeSaveViewpointDialog = function(event) {
+			if (event) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			
+			// Remove console.log
 			const dialog = document.getElementById('saveViewpointDialog');
-			dialog.style.display = 'none';
+			if (dialog) {
+				dialog.style.display = 'none';
+			}
+			return false;
 		};
 
 		window.saveViewpoint = function() {
@@ -4210,24 +4231,114 @@
 		};
 
 		window.deleteViewpoint = function(id, event) {
-			event.stopPropagation();
-			savedViewpoints = savedViewpoints.filter(vp => vp.id !== id);
+			if (event) {
+				event.stopPropagation();
+			}
+			
+			// Convert to let if it was const before
+			let savedViewpointsVar = window.savedViewpoints || savedViewpoints;
+			
+			// Filter out the viewpoint with the given id
+			savedViewpointsVar = savedViewpointsVar.filter(vp => vp.id !== id);
+			
+			// Update global references
+			if (window.savedViewpoints) window.savedViewpoints = savedViewpointsVar;
+			savedViewpoints = savedViewpointsVar;
+			
+			// Update the UI
 			updateViewpointsList();
-			localStorage.setItem('savedViewpoints', JSON.stringify(savedViewpoints));
+			
+			// Save to localStorage
+			localStorage.setItem('savedViewpoints', JSON.stringify(savedViewpointsVar));
+			
+			return false; // Prevent any other handlers from executing
 		};
-
+		
 		function updateViewpointsList() {
 			const list = document.getElementById('viewpointList');
+			if (!list) return;
+			
 			list.innerHTML = '';
+			
+			let viewpointsToDisplay = window.savedViewpoints || savedViewpoints;
+			if (!viewpointsToDisplay || !Array.isArray(viewpointsToDisplay)) {
+				console.error("No viewpoints array found");
+				return;
+			}
 
-			savedViewpoints.forEach(viewpoint => {
+			viewpointsToDisplay.forEach(viewpoint => {
+				// Create main container
 				const item = document.createElement('div');
 				item.className = 'viewpoint-item';
-				item.innerHTML = `
-					<span>${viewpoint.name}</span>
-					<i class="fas fa-times delete-btn" onclick="deleteViewpoint(${viewpoint.id}, event)"></i>
-				`;
-				item.onclick = () => loadViewpoint(viewpoint);
+				
+				// Create name span
+				const nameSpan = document.createElement('span');
+				nameSpan.textContent = viewpoint.name;
+				nameSpan.style.flexGrow = '1';
+				item.appendChild(nameSpan);
+				
+				// Create container for the delete button to isolate it from the item click
+				const btnContainer = document.createElement('div');
+				btnContainer.style.position = 'relative';
+				btnContainer.style.zIndex = '20';
+				
+				// Create delete button with better handling
+				const deleteBtn = document.createElement('button');
+				deleteBtn.className = 'delete-btn';
+				deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+				deleteBtn.title = 'Delete viewpoint';
+				
+				// Use direct event handler
+				deleteBtn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					e.preventDefault();
+					
+					// Remove console.log
+					
+					try {
+						// Delete the viewpoint - do a direct localStorage update first
+						const currentViewpoints = JSON.parse(localStorage.getItem('savedViewpoints') || '[]');
+						const updatedViewpoints = currentViewpoints.filter(vp => vp.id !== viewpoint.id);
+						localStorage.setItem('savedViewpoints', JSON.stringify(updatedViewpoints));
+						
+						// Update window global regardless of scope
+						window.savedViewpoints = updatedViewpoints.map(vp => ({
+							...vp,
+							position: new THREE.Vector3(vp.position.x, vp.position.y, vp.position.z),
+							target: new THREE.Vector3(vp.target.x, vp.target.y, vp.target.z)
+						}));
+						
+						// Try to update local variable safely if it exists in this scope
+						if (typeof savedViewpoints !== 'undefined') {
+							try {
+								// Try/catch in case it's a const
+								savedViewpoints = window.savedViewpoints;
+							} catch (e) {
+								// Remove console.log
+							}
+						}
+						
+						// Update UI directly instead of through updateViewpointsList to avoid const issues
+						e.target.closest('.viewpoint-item').remove();
+						
+						// Remove console.log
+					} catch (error) {
+						console.error('Error deleting viewpoint:', error);
+					}
+					
+					return false;
+				});
+				
+				btnContainer.appendChild(deleteBtn);
+				item.appendChild(btnContainer);
+				
+				// Add click handler to load viewpoint (only for the item, not the delete button)
+				item.addEventListener('click', function(e) {
+					if (!e.target.closest('.delete-btn')) {
+						window.loadViewpoint(viewpoint);
+					}
+				});
+				
 				list.appendChild(item);
 			});
 		}
@@ -4244,6 +4355,84 @@
 				updateViewpointsList();
 			}
 		});
+
+		// Add a direct event listener to the cancel button
+		document.addEventListener('DOMContentLoaded', function() {
+			const cancelButton = document.querySelector('#saveViewpointDialog .cancel');
+			if (cancelButton) {
+				cancelButton.addEventListener('click', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+					window.closeSaveViewpointDialog(e);
+					return false;
+				});
+			}
+		});
 	</script>
-  </body>
+	
+	<!-- Fix for Save Viewpoint dialog buttons -->
+	<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		// Fix for Cancel button in Save Viewpoint dialog
+		const cancelBtn = document.getElementById('cancelViewpointBtn');
+		if (cancelBtn) {
+			cancelBtn.addEventListener('click', function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+				
+				// Close the save viewpoint dialog directly
+				const dialog = document.getElementById('saveViewpointDialog');
+				if (dialog) {
+					dialog.style.display = 'none';
+				}
+				
+				// Remove console.log
+				return false;
+			});
+		}
+		
+		// Add clear all viewpoints functionality
+		const clearAllBtn = document.getElementById('clearAllViewpoints');
+		if (clearAllBtn) {
+			clearAllBtn.addEventListener('click', function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+				
+				// Confirm with the user
+				if (confirm('Are you sure you want to delete all saved viewpoints? This cannot be undone.')) {
+					// Clear all viewpoints from localStorage
+					localStorage.removeItem('savedViewpoints');
+					
+					// Reset the global viewpoints array
+					window.savedViewpoints = [];
+					if (typeof savedViewpoints !== 'undefined') {
+						savedViewpoints = [];
+					}
+					
+					// Update the UI
+					const list = document.getElementById('viewpointList');
+					if (list) {
+						list.innerHTML = '';
+					}
+					
+					// Remove console.log
+				}
+				
+				return false;
+			});
+		}
+		
+		// Also add a keyboard listener for the ESC key
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') {
+				const dialog = document.getElementById('saveViewpointDialog');
+				if (dialog && dialog.style.display === 'block') {
+					dialog.style.display = 'none';
+					// Remove console.log
+				}
+			}
+		});
+	});
+	</script>
+</body>
 </html>
