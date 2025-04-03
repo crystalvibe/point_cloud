@@ -1138,6 +1138,104 @@
 			content: 'TEST VERSION';
 			letter-spacing: 1px;
 		}
+
+		/* Camera dropdown styles */
+		.nav-dropdown-content {
+			display: none;
+			position: absolute;
+			background: rgba(30, 35, 45, 0.95);
+			backdrop-filter: blur(12px);
+			border-radius: 8px;
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			padding: 8px;
+			z-index: 1000;
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+			min-width: 120px;
+		}
+
+		.nav-dropdown-content.show {
+			display: flex;
+			flex-direction: row;
+			gap: 8px;
+		}
+
+		.nav-dropdown-content .dropdown-item {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 8px;
+			border: none;
+			background: transparent;
+			color: white;
+			cursor: pointer;
+			border-radius: 6px;
+			transition: all 0.2s ease;
+		}
+
+		.nav-dropdown-content .dropdown-item:hover {
+			background: rgba(255, 255, 255, 0.1);
+		}
+
+		.nav-dropdown-content .dropdown-item i {
+			font-size: 1.2em;
+		}
+
+		.nav-dropdown-content .dropdown-item.active {
+			background: rgba(75, 107, 253, 0.3);
+			position: relative;
+		}
+
+		.nav-dropdown-content .dropdown-item.active::after {
+			content: none;
+		}
+
+		.nav-dropdown-content .dropdown-item.active i {
+			color: #4B6BFD;
+		}
+
+		/* Always keep RGB view active */
+		.nav-dropdown-content .dropdown-item[onclick="toggleRGBView()"] {
+			background: rgba(75, 107, 253, 0.3);
+		}
+
+		.nav-dropdown-content .dropdown-item[onclick="toggleRGBView()"] i {
+			color: #4B6BFD;
+		}
+
+		.potree_map_toggle {
+			display: block !important;
+			visibility: visible !important;
+			opacity: 1 !important;
+			position: relative !important;
+			z-index: 1000 !important;
+			transition: none !important;
+		}
+		
+		#potree_map_toggle {
+			display: block !important;
+			visibility: visible !important;
+			opacity: 1 !important;
+			position: relative !important;
+			z-index: 1000 !important;
+			transition: none !important;
+		}
+
+		#potree_map_toggle.active {
+			background-color: rgba(75, 107, 253, 0.3);
+		}
+
+		#potree_map {
+			display: none !important;
+			visibility: hidden !important;
+			opacity: 0 !important;
+			transition: none !important;
+		}
+
+		#potree_map.visible {
+			display: block !important;
+			visibility: visible !important;
+			opacity: 1 !important;
+		}
 	</style>
 </head>
 
@@ -1629,6 +1727,7 @@
 								viewer.fpControls.moveSpeed = moveSpeed;
 								viewer.fpControls.lockElevation = false;
 								viewer.fpControls.enableDamping = true;
+								viewer.fpControls.dampingFactor = 0.05;
 							}
 
 							// Enable keyboard controls
@@ -1838,106 +1937,34 @@
 	};
 
 	// Add orthographic view toggle function
-	window.toggleOrthographicView = () => {
-		const scene = viewer.scene;
-		const checkIcon = document.querySelector('.dropdown-item i.check-icon');
-		const dropdownItem = document.querySelector('.dropdown-item[onclick="toggleOrthographicView()"]');
+	window.toggleOrthographicView = function() {
+		const button = document.querySelector('#drawDropdown .dropdown-item[onclick="toggleOrthographicView()"]');
+		button.classList.toggle('active');
 		
+		// Toggle orthographic view functionality
+		const scene = viewer.scene;
 		if (scene.cameraMode === Potree.CameraMode.PERSPECTIVE) {
-			// Switch to orthographic
-			viewer.setCameraMode(Potree.CameraMode.ORTHOGRAPHIC);
-			checkIcon.style.opacity = '1';
-			dropdownItem.classList.add('active');
+				viewer.setCameraMode(Potree.CameraMode.ORTHOGRAPHIC);
 		} else {
-			// Switch back to perspective (default)
-			viewer.setCameraMode(Potree.CameraMode.PERSPECTIVE);
-			checkIcon.style.opacity = '0';
-			dropdownItem.classList.remove('active');
-			
-			// Reset camera parameters for perspective view
-			viewer.setFOV(60);
-			viewer.scene.view.position.copy(viewer.scene.view.position);
-			viewer.scene.view.lookAt(viewer.scene.view.getPivot());
+				viewer.setCameraMode(Potree.CameraMode.PERSPECTIVE);
 		}
-		
-		// Force scene update
-		viewer.scene.view.updateView();
 	};
 
-	window.toggleRGBView = () => {
-		const scene = viewer.scene;
-		const checkIcon = document.querySelector('.dropdown-item[onclick="toggleRGBView()"] i.check-icon');
-		const dropdownItem = document.querySelector('.dropdown-item[onclick="toggleRGBView()"]');
-		const intensityCheckIcon = document.querySelector('.dropdown-item[onclick="toggleIntensityView()"] i.check-icon');
-		const intensityDropdownItem = document.querySelector('.dropdown-item[onclick="toggleIntensityView()"]');
-		const elevationCheckIcon = document.querySelector('.dropdown-item[onclick="toggleElevationView()"] i.check-icon');
-		const elevationDropdownItem = document.querySelector('.dropdown-item[onclick="toggleElevationView()"]');
-
-		// Only proceed if RGB view is not already active
-		if (checkIcon.style.opacity === '0') {
-			// Store original state before switching to RGB
-			scene.pointclouds.forEach(pointcloud => {
-				if (pointcloud.material) {
-					// Store current state for restoration if needed
-					if (!pointcloud._originalState && pointcloud._previousState) {
-						// If we're coming from elevation mode, keep the saved state
-						pointcloud._originalState = pointcloud._previousState;
-						delete pointcloud._previousState;
-					}
-					
-					// Clear all color type defines
-					pointcloud.material.removeDefine('color_type_intensity');
-					pointcloud.material.removeDefine('color_type_elevation');
-					pointcloud.material.removeDefine('color_type_classification');
-					pointcloud.material.removeDefine('color_type_composite');
-					pointcloud.material.removeDefine('color_type_matcap');
-					
-					// Set pure RGB coloring
-					pointcloud.material.setDefine('color_type_rgba', true);
-					pointcloud.material.activeAttributeName = 'rgba';
-					
-					// Set weights for RGB view
-					pointcloud.material.weightRGB = 1.0;
-					pointcloud.material.weightIntensity = 0.0;
-					pointcloud.material.weightElevation = 0.0;
-					
-					// Force material update
-					pointcloud.material.needsUpdate = true;
-					
-					// Update all underlying octree nodes
-					if (pointcloud.visibleNodes) {
-						for (const node of pointcloud.visibleNodes) {
-							if (node.sceneNode) {
-								node.sceneNode.material = pointcloud.material;
-							}
-						}
-					}
-				}
-			});
-			
-			// Update UI
-			checkIcon.style.opacity = '1';
-			dropdownItem.classList.add('active');
-			
-			// Disable intensity and elevation views
-			intensityCheckIcon.style.opacity = '0';
-			intensityDropdownItem.classList.remove('active');
-			elevationCheckIcon.style.opacity = '0';
-			elevationDropdownItem.classList.remove('active');
+	window.toggleRGBView = function() {
+		// RGB view is always active, just trigger the functionality
+		const material = viewer.scene.pointclouds[0]?.material;
+		if (material) {
+			material.pointColorType = Potree.PointColorType.RGB;
+			material.needsUpdate = true;
 		}
-
-		// Force material update for all pointclouds
-		viewer.scene.dispatchEvent({
-			type: 'material_property_changed',
-			target: scene.pointclouds[0]?.material
-		});
-		
-		// Force renderer to update
-		viewer.renderArea.style.opacity = '0.99';
-		setTimeout(() => {
-			viewer.renderArea.style.opacity = '1.0';
-		}, 20);
 	};
+
+	// Close dropdown when clicking outside
+	document.addEventListener('click', (e) => {
+		if (!e.target.closest('.nav-dropdown')) {
+			document.getElementById('drawDropdown').classList.remove('show');
+		}
+	});
 
 	window.toggleIntensityView = () => {
 		const scene = viewer.scene;
@@ -2509,11 +2536,517 @@
 		// Ensure the entire point cloud is visible
 		viewer.fitToScreen();
 	};
+
+		function toggleFullscreenView() {
+			if (document.fullscreenElement) {
+				document.exitFullscreen();
+			} else {
+				document.documentElement.requestFullscreen();
+			}
+		}
+
+		// Initialize savedViewpoints only once
+		const savedViewpoints = localStorage.getItem('savedViewpoints') 
+			? JSON.parse(localStorage.getItem('savedViewpoints')).map(vp => ({
+				...vp,
+				position: new THREE.Vector3(vp.position.x, vp.position.y, vp.position.z),
+				target: new THREE.Vector3(vp.target.x, vp.target.y, vp.target.z)
+			}))
+			: [];
+
+		window.showSaveViewpointDialog = function() {
+			const dialog = document.getElementById('saveViewpointDialog');
+			dialog.style.display = 'block';
+			document.getElementById('viewpointName').value = '';
+			document.getElementById('viewpointName').focus();
+		};
+
+		window.closeSaveViewpointDialog = function() {
+			const dialog = document.getElementById('saveViewpointDialog');
+			dialog.style.display = 'none';
+		};
+
+		window.saveViewpoint = function() {
+			const name = document.getElementById('viewpointName').value.trim();
+			if (!name) {
+				alert('Please enter a name for the viewpoint');
+				return;
+			}
+
+			const camera = viewer.scene.getActiveCamera();
+			const viewpoint = {
+				id: Date.now(),
+				name: name,
+				position: camera.position.clone(),
+				target: viewer.scene.view.position.clone(),
+				timestamp: new Date().toLocaleString()
+			};
+
+			savedViewpoints.push(viewpoint);
+			updateViewpointsList();
+			closeSaveViewpointDialog();
+			toggleViewpointsPanel(true);
+
+			// Save to localStorage
+			localStorage.setItem('savedViewpoints', JSON.stringify(savedViewpoints));
+		};
+
+		window.toggleViewpointsPanel = function(show) {
+			const panel = document.getElementById('savedViewpointsPanel');
+			panel.style.display = show ? 'block' : 'none';
+		};
+
+		window.loadViewpoint = function(viewpoint) {
+			const camera = viewer.scene.getActiveCamera();
+			
+			// Create a smooth transition
+			const duration = 1000; // 1 second
+			const startPos = camera.position.clone();
+			const startTarget = viewer.scene.view.position.clone();
+			const startTime = Date.now();
+
+			function animate() {
+				const elapsed = Date.now() - startTime;
+				const progress = Math.min(elapsed / duration, 1);
+				
+				// Use easing function for smooth transition
+				const eased = 1 - Math.pow(1 - progress, 3);
+
+				camera.position.lerpVectors(startPos, viewpoint.position, eased);
+				viewer.scene.view.position.lerpVectors(startTarget, viewpoint.target, eased);
+				
+				if (progress < 1) {
+					requestAnimationFrame(animate);
+				}
+			}
+
+			animate();
+		};
+
+		window.deleteViewpoint = function(id, event) {
+			event.stopPropagation();
+			savedViewpoints = savedViewpoints.filter(vp => vp.id !== id);
+			updateViewpointsList();
+			localStorage.setItem('savedViewpoints', JSON.stringify(savedViewpoints));
+		};
+
+		function updateViewpointsList() {
+			const list = document.getElementById('viewpointList');
+			list.innerHTML = '';
+
+			savedViewpoints.forEach(viewpoint => {
+				const item = document.createElement('div');
+				item.className = 'viewpoint-item';
+				item.innerHTML = `
+					<span>${viewpoint.name}</span>
+					<i class="fas fa-times delete-btn" onclick="deleteViewpoint(${viewpoint.id}, event)"></i>
+				`;
+				item.onclick = () => loadViewpoint(viewpoint);
+				list.appendChild(item);
+			});
+		}
+
+		// Load saved viewpoints from localStorage on startup
+		document.addEventListener('DOMContentLoaded', () => {
+			const saved = localStorage.getItem('savedViewpoints');
+			if (saved) {
+				savedViewpoints = JSON.parse(saved);
+				savedViewpoints.forEach(vp => {
+					vp.position = new THREE.Vector3(vp.position.x, vp.position.y, vp.position.z);
+					vp.target = new THREE.Vector3(vp.target.x, vp.target.y, vp.target.z);
+				});
+				updateViewpointsList();
+			}
+		});
+
+		window.toggleCameraMenu = function(event) {
+			event.stopPropagation();
+			const dropdown = document.getElementById('cameraDropdown');
+			dropdown.classList.toggle('show');
+			
+			// Close dropdown when clicking outside
+			const closeDropdown = (e) => {
+				if (!e.target.closest('.nav-dropdown')) {
+					dropdown.classList.remove('show');
+					document.removeEventListener('click', closeDropdown);
+				}
+			};
+			
+			document.addEventListener('click', closeDropdown);
+		};
+
+		window.handleCameraOption = function(option) {
+			switch(option) {
+				case 'screenshot':
+					takeScreenshot();
+					break;
+				case 'pov':
+					showSaveViewpointDialog();
+					break;
+			}
+			
+			document.getElementById('cameraDropdown').classList.remove('show');
+		};
+
+		window.takeScreenshot = function() {
+			const dialog = document.getElementById('screenshotDialog');
+			dialog.style.display = 'block';
+		};
+
+		window.closeScreenshotDialog = function() {
+			const dialog = document.getElementById('screenshotDialog');
+			dialog.style.display = 'none';
+		};
+
+		window.takeScreenshotWithResolution = async function() {
+			const button = document.querySelector('[title="Camera"]');
+			button.classList.add('active');
+			
+			const resolutionStr = document.getElementById('resolutionSelect').value;
+			let width, height;
+			
+			if (resolutionStr === 'current') {
+				width = viewer.renderer.domElement.width;
+				height = viewer.renderer.domElement.height;
+			} else {
+				[width, height] = resolutionStr.split('x').map(Number);
+			}
+			
+			try {
+				// Save current canvas size
+				const originalWidth = viewer.renderer.domElement.width;
+				const originalHeight = viewer.renderer.domElement.height;
+				
+				// Temporarily resize renderer
+				viewer.renderer.setSize(width, height);
+				
+				// Force a render at new size
+				viewer.renderer.render(viewer.scene.scene, viewer.scene.getActiveCamera());
+				
+				// Take screenshot
+				const screenshot = viewer.renderer.domElement.toDataURL('image/png');
+				
+				// Create temporary link to download
+				const link = document.createElement('a');
+				link.href = screenshot;
+				link.download = `screenshot_${width}x${height}.png`;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				
+				// Restore original size
+				viewer.renderer.setSize(originalWidth, originalHeight);
+				viewer.renderer.render(viewer.scene.scene, viewer.scene.getActiveCamera());
+				
+				button.classList.remove('active');
+				closeScreenshotDialog();
+			} catch (error) {
+				console.error('Screenshot error:', error);
+				alert('Failed to take screenshot. Please try again.');
+				button.classList.remove('active');
+				closeScreenshotDialog();
+			}
+		};
+
+		// Close dialog when clicking outside
+		document.addEventListener('click', function(event) {
+			const dialog = document.getElementById('screenshotDialog');
+			if (event.target === dialog) {
+				closeScreenshotDialog();
+			}
+		});
+
+		window.startVideoAnimation = function() {
+			const animation = new Potree.CameraAnimation(viewer);
+			animation.setVisible(true);
+			viewer.scene.cameraAnimations.push(animation);
+		};
+
+		window.startObjectAnimation = function() {
+			// Create an orbit animation around the current target
+			const camera = viewer.scene.getActiveCamera();
+			const target = camera.position.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(100));
+			
+			const animation = new Potree.CameraAnimation(viewer);
+			animation.setVisible(true);
+			
+			// Add control points for a circular path
+			const radius = 100;
+			const points = 8;
+			for(let i = 0; i <= points; i++) {
+				const angle = (i / points) * Math.PI * 2;
+				const x = target.x + radius * Math.cos(angle);
+				const z = target.z + radius * Math.sin(angle);
+				const position = new THREE.Vector3(x, target.y, z);
+				
+				animation.addControlPoint({
+					position: position,
+					target: target
+				});
+			}
+			
+			viewer.scene.cameraAnimations.push(animation);
+		};
+
+		
+
+		// Drawing Tools Functions
+		function toggleDraw() {
+			const button = document.querySelector('[title="Draw"]');
+			button.classList.toggle('active');
+			// Add drawing mode toggle here
+		}
+
+		// Make functions globally accessible
+		window.toggleTransform = function() {
+			const button = document.querySelector('[title="Zoomed in view"]');
+			button.classList.toggle('active');
+			
+			// Get all point clouds and their bounds
+			const box = viewer.getBoundingBox(viewer.scene.pointclouds);
+			const size = box.getSize(new THREE.Vector3());
+			const center = box.getCenter(new THREE.Vector3());
+			const maxDim = Math.max(size.x, size.y, size.z);
+			
+			// Set to perspective mode for panoramic view
+			viewer.setCameraMode(1);  // PERSPECTIVE
+			
+			// Position camera at an elevated angle for panoramic view
+			const distance = maxDim * 1.5;  // Closer distance for better detail
+			viewer.scene.view.position.set(
+				center.x - distance,  // Position camera diagonally for panoramic view
+				center.y - distance,
+				center.z + distance * 0.75  // Slightly lower height for better perspective
+			);
+			
+			// Set view parameters for panoramic angle
+			viewer.scene.view.pitch = -Math.PI / 6;  // -30 degrees for panoramic angle
+			viewer.scene.view.yaw = Math.PI / 4;     // 45 degrees rotation for diagonal view
+			viewer.scene.view.radius = distance;
+			
+			// Set a wider field of view for panoramic effect
+			viewer.setFOV(75);
+			
+			// Ensure the entire point cloud is visible
+			viewer.fitToScreen();
+		};
+
+		window.toggleFullscreenView = function() {
+			const button = document.querySelector('[title="Fullscreen View"]');
+			button.classList.toggle('active');
+			
+			const renderArea = document.getElementById('potree_render_area');
+			const container = document.querySelector('.potree_container');
+			const dropZone = document.getElementById('dropZone');
+			const welcomeOverlay = document.getElementById('welcomeOverlay');
+			
+			// Function to handle fullscreen changes
+			function onFullscreenChange() {
+				if (document.fullscreenElement) {
+					// Update viewer size for fullscreen
+					viewer.setDimensions(window.innerWidth, window.innerHeight);
+					viewer.renderer.setSize(window.innerWidth, window.innerHeight);
+					
+					// Ensure container covers full screen
+					container.style.width = '100vw';
+					container.style.height = '100vh';
+					container.style.position = 'fixed';
+					container.style.left = '0';
+					container.style.top = '0';
+					
+					// Update drop zone for fullscreen
+					if (dropZone) {
+						dropZone.style.position = 'fixed';
+						dropZone.style.width = '100vw';
+						dropZone.style.height = '100vh';
+						dropZone.style.left = '0';
+						dropZone.style.top = '0';
+						dropZone.style.zIndex = '10000';
+					}
+					
+					// Update welcome overlay for fullscreen
+					if (welcomeOverlay) {
+						welcomeOverlay.style.position = 'fixed';
+						welcomeOverlay.style.zIndex = '10001';
+					}
+					
+					// Ensure the minimal-nav stays on top
+					const minimalNav = document.querySelector('.minimal-nav');
+					if (minimalNav) {
+						minimalNav.style.zIndex = '10002';
+					}
+					
+				} else {
+					// Restore original size
+					viewer.setDimensions(renderArea.clientWidth, renderArea.clientHeight);
+					viewer.renderer.setSize(renderArea.clientWidth, renderArea.clientHeight);
+					
+					// Restore container size
+					container.style.width = '100%';
+					container.style.height = '100%';
+					container.style.position = 'absolute';
+					
+					// Restore drop zone
+					if (dropZone) {
+						dropZone.style.position = 'fixed';
+						dropZone.style.width = '100%';
+						dropZone.style.height = '100%';
+						dropZone.style.zIndex = '1000';
+					}
+					
+					// Restore welcome overlay
+					if (welcomeOverlay) {
+						welcomeOverlay.style.position = 'fixed';
+						welcomeOverlay.style.zIndex = '999';
+					}
+					
+					// Restore minimal-nav z-index
+					const minimalNav = document.querySelector('.minimal-nav');
+					if (minimalNav) {
+						minimalNav.style.zIndex = '1000';
+					}
+				}
+				
+				// Force a re-render
+				viewer.renderer.render(viewer.scene.scene, viewer.scene.getActiveCamera());
+			}
+
+			// Add fullscreen change event listeners
+			document.addEventListener('fullscreenchange', onFullscreenChange);
+			document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+			document.addEventListener('mozfullscreenchange', onFullscreenChange);
+			document.addEventListener('MSFullscreenChange', onFullscreenChange);
+			
+			if (!document.fullscreenElement) {
+				// Enter fullscreen
+				if (container.requestFullscreen) {
+					container.requestFullscreen();
+				} else if (container.webkitRequestFullscreen) { // Safari
+					container.webkitRequestFullscreen();
+				} else if (container.msRequestFullscreen) { // IE11
+					container.msRequestFullscreen();
+				}
+			} else {
+				// Exit fullscreen
+				if (document.exitFullscreen) {
+					document.exitFullscreen();
+				} else if (document.webkitExitFullscreen) { // Safari
+					document.webkitExitFullscreen();
+				} else if (document.msExitFullscreen) { // IE11
+					document.msExitFullscreen();
+				}
+			}
+		};
+
+		window.showSaveViewpointDialog = function() {
+			const dialog = document.getElementById('saveViewpointDialog');
+			dialog.style.display = 'block';
+			document.getElementById('viewpointName').value = '';
+			document.getElementById('viewpointName').focus();
+		};
+
+		window.closeSaveViewpointDialog = function() {
+			const dialog = document.getElementById('saveViewpointDialog');
+			dialog.style.display = 'none';
+		};
+
+		window.saveViewpoint = function() {
+			const name = document.getElementById('viewpointName').value.trim();
+			if (!name) {
+				alert('Please enter a name for the viewpoint');
+				return;
+			}
+
+			const camera = viewer.scene.getActiveCamera();
+			const viewpoint = {
+				id: Date.now(),
+				name: name,
+				position: camera.position.clone(),
+				target: viewer.scene.view.position.clone(),
+				timestamp: new Date().toLocaleString()
+			};
+
+			savedViewpoints.push(viewpoint);
+			updateViewpointsList();
+			closeSaveViewpointDialog();
+			toggleViewpointsPanel(true);
+
+			// Save to localStorage
+			localStorage.setItem('savedViewpoints', JSON.stringify(savedViewpoints));
+		};
+
+		window.toggleViewpointsPanel = function(show) {
+			const panel = document.getElementById('savedViewpointsPanel');
+			panel.style.display = show ? 'block' : 'none';
+		};
+
+		window.loadViewpoint = function(viewpoint) {
+			const camera = viewer.scene.getActiveCamera();
+			
+			// Create a smooth transition
+			const duration = 1000; // 1 second
+			const startPos = camera.position.clone();
+			const startTarget = viewer.scene.view.position.clone();
+			const startTime = Date.now();
+
+			function animate() {
+				const elapsed = Date.now() - startTime;
+				const progress = Math.min(elapsed / duration, 1);
+				
+				// Use easing function for smooth transition
+				const eased = 1 - Math.pow(1 - progress, 3);
+
+				camera.position.lerpVectors(startPos, viewpoint.position, eased);
+				viewer.scene.view.position.lerpVectors(startTarget, viewpoint.target, eased);
+				
+				if (progress < 1) {
+					requestAnimationFrame(animate);
+				}
+			}
+
+			animate();
+		};
+
+		window.deleteViewpoint = function(id, event) {
+			event.stopPropagation();
+			savedViewpoints = savedViewpoints.filter(vp => vp.id !== id);
+			updateViewpointsList();
+			localStorage.setItem('savedViewpoints', JSON.stringify(savedViewpoints));
+		};
+
+		function updateViewpointsList() {
+			const list = document.getElementById('viewpointList');
+			list.innerHTML = '';
+
+			savedViewpoints.forEach(viewpoint => {
+				const item = document.createElement('div');
+				item.className = 'viewpoint-item';
+				item.innerHTML = `
+					<span>${viewpoint.name}</span>
+					<i class="fas fa-times delete-btn" onclick="deleteViewpoint(${viewpoint.id}, event)"></i>
+				`;
+				item.onclick = () => loadViewpoint(viewpoint);
+				list.appendChild(item);
+			});
+		}
+
+		// Load saved viewpoints from localStorage on startup
+		document.addEventListener('DOMContentLoaded', () => {
+			const saved = localStorage.getItem('savedViewpoints');
+			if (saved) {
+				savedViewpoints = JSON.parse(saved);
+				savedViewpoints.forEach(vp => {
+					vp.position = new THREE.Vector3(vp.position.x, vp.position.y, vp.position.z);
+					vp.target = new THREE.Vector3(vp.target.x, vp.target.y, vp.target.z);
+				});
+				updateViewpointsList();
+			}
+		});
 	</script>
 	
 	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; overflow: hidden;">
 		<div id="potree_render_area" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0;"></div>
-		<div id="top_view_map" class="top-view-map">
+		<div id="top_view_map" class="top-view-map" style="display: none;">
 			<div class="map-title">Top View</div>
 			<div class="map-controls">
 				<button id="zoomInMap" title="Zoom In"><i class="fas fa-plus"></i></button>
@@ -2537,46 +3070,20 @@
 			<div class="nav-dropdown">
 				<!-- Removed navigation mode icon and dropdown -->
 			</div>
-			<button class="nav-button" title="Distance" onclick="toggleMeasurement('distance')">
-				<i class="fas fa-ruler-combined"></i>
-			</button>
-			<div class="nav-separator"></div>
-
-			<!-- Measurement Tools -->
-			<button class="nav-button" title="Add Comment" onclick="toggleComments()">
-				<i class="fas fa-comment-alt"></i>
-			</button>
-
-			<div class="nav-separator"></div>
-
 			<!-- Camera Dropdown -->
 			<div class="nav-dropdown">
 				<button class="nav-button" title="Camera" onclick="toggleCameraMenu(event)">
 					<i class="fas fa-camera"></i>
 				</button>
 				<div class="nav-dropdown-content" id="cameraDropdown">
-					<button class="dropdown-item" onclick="handleCameraOption('screenshot')">
+					<button class="dropdown-item" onclick="handleCameraOption('screenshot')" title="Take Screenshot">
 						<i class="fas fa-camera"></i>
-						<span>Screenshot</span>
 					</button>
-					<button class="dropdown-item" onclick="handleCameraOption('pov')">
+					<button class="dropdown-item" onclick="handleCameraOption('pov')" title="Save Point of View">
 						<i class="fas fa-eye"></i>
-						<span>Point of View</span>
-					</button>
-					<button class="dropdown-item" onclick="handleCameraOption('video')">
-						<i class="fas fa-video"></i>
-						<span>Video Animation</span>
-					</button>
-					<button class="dropdown-item" onclick="handleCameraOption('object')">
-						<i class="fas fa-cube"></i>
-						<span>Object Animation</span>
 					</button>
 				</div>
 			</div>
-
-			<button class="nav-button" title="Crop" onclick="toggleCrop()">
-				<i class="fas fa-crop"></i>
-			</button>
 
 			<div class="nav-separator"></div>
 
@@ -2586,28 +3093,12 @@
 					<i class="fas fa-pencil-alt"></i>
 				</button>
 				<div class="nav-dropdown-content" id="drawDropdown">
-					<div class="dropdown-header">Drawing Tools</div>
-					<button class="dropdown-item" onclick="toggleOrthographicView()">
+					<button class="dropdown-item" onclick="toggleOrthographicView()" title="Orthographic View">
 						<i class="fas fa-cube"></i>
-						<span>Orthographic View</span>
-						<i class="fas fa-check check-icon"></i>
 					</button>
-					<button class="dropdown-item active" onclick="toggleRGBView()">
+					<button class="dropdown-item active" onclick="toggleRGBView()" title="RGB View">
 						<i class="fas fa-palette"></i>
-						<span>RGB</span>
-						<i class="fas fa-check check-icon" style="opacity: 1;"></i>
 					</button>
-					<button class="dropdown-item" onclick="toggleIntensityView()">
-						<i class="fas fa-adjust"></i>
-						<span>Intensity</span>
-						<i class="fas fa-check check-icon"></i>
-					</button>
-					<button class="dropdown-item" onclick="toggleElevationView()">
-						<i class="fas fa-mountain"></i>
-						<span>Elevation</span>
-						<i class="fas fa-check check-icon"></i>
-					</button>
-					<!-- Add more drawing tools here -->
 				</div>
 			</div>
 			<button class="nav-button" title="Zoomed in view" onclick="toggleTransform()">
@@ -2615,9 +3106,6 @@
 			</button>
 			<button class="nav-button" title="Fullscreen View" onclick="toggleFullscreenView()">
 				<i class="fas fa-expand-arrows-alt"></i>
-			</button>
-			<button class="nav-button" title="Statistics" onclick="toggleStats()">
-				<i class="fas fa-chart-bar"></i>
 			</button>
 		</div>
 	</div>
@@ -2956,7 +3444,8 @@
 		topViewScene.add(cameraIndicator);
 		
 		// Initialize map controls
-		let mapVisible = true;
+		let mapVisible = false; // Set map to hidden by default
+		document.getElementById('top_view_map').style.display = mapVisible ? 'block' : 'none'; // Add this line to set initial display
 		let initialZoomFactor = 3.0; // Increased from 1.2 to show more of the point cloud
 		let currentZoomFactor = initialZoomFactor;
 		let originalBoundingBox = null;
@@ -3000,7 +3489,7 @@
 		const minimalNav = document.querySelector('.minimal-nav');
 		const mapButton = document.createElement('button');
 		mapButton.className = 'nav-button';
-		mapButton.title = 'Toggle Top View Map';
+		mapButton.title = 'Top View Map';
 		mapButton.innerHTML = '<i class="fas fa-map"></i>';
 		
 		// Insert after the divider
@@ -3014,7 +3503,7 @@
 		});
 		
 		// Initialize state
-		mapButton.classList.add('active');
+		// mapButton.classList.add('active'); // Remove this line to make button inactive by default
 
 		// Drag and drop functionality
 		const dropZone = document.getElementById('dropZone');
@@ -3311,6 +3800,7 @@
 								viewer.fpControls.moveSpeed = moveSpeed;
 								viewer.fpControls.lockElevation = false;
 								viewer.fpControls.enableDamping = true;
+								viewer.fpControls.dampingFactor = 0.05;
 							}
 
 							// Enable keyboard controls
@@ -3394,12 +3884,6 @@
 					break;
 				case 'pov':
 					showSaveViewpointDialog();
-					break;
-				case 'video':
-					startVideoAnimation();
-					break;
-				case 'object':
-					startObjectAnimation();
 					break;
 			}
 			
@@ -3506,11 +3990,7 @@
 			viewer.scene.cameraAnimations.push(animation);
 		};
 
-		function toggleCrop() {
-			const button = document.querySelector('[title="Crop"]');
-			button.classList.toggle('active');
-			// Add cropping functionality here
-		}
+		
 
 		// Drawing Tools Functions
 		function toggleDraw() {
@@ -3659,14 +4139,6 @@
 				}
 			}
 		};
-
-		function toggleStats() {
-			const button = document.querySelector('[title="Statistics"]');
-			button.classList.toggle('active');
-			// Add statistics panel toggle here
-		}
-
-		let savedViewpoints = [];
 
 		window.showSaveViewpointDialog = function() {
 			const dialog = document.getElementById('saveViewpointDialog');

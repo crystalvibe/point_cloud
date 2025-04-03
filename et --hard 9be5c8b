@@ -1,0 +1,4 @@
+[33ma609b9b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update viewer and sidebar components
+[33m9be5c8b[m Initial commit with point cloud viewer implementation
+[33mfbef6c2[m Changed Overview button text to Zoomed in view
+[33m98824d9[m Initial commit

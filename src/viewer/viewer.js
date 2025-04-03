@@ -1220,13 +1220,31 @@ export class Viewer extends EventDispatcher{
 	};
 
 	toggleMap () {
-		// let map = $('#potree_map');
-		// map.toggle(100);
-
 		if (this.mapView) {
+			const mapElement = document.getElementById('potree_map');
+			const mapToggle = document.getElementById('potree_map_toggle');
+			
+			if (mapElement) {
+				if (mapElement.style.display === 'none' || !mapElement.style.display) {
+					mapElement.style.display = 'block';
+					mapElement.style.visibility = 'visible';
+					mapElement.style.opacity = '1';
+					if (mapToggle) {
+						mapToggle.classList.add('active');
+					}
+				} else {
+					mapElement.style.display = 'none';
+					mapElement.style.visibility = 'hidden';
+					mapElement.style.opacity = '0';
+					if (mapToggle) {
+						mapToggle.classList.remove('active');
+					}
+				}
+			}
+			
 			this.mapView.toggle();
 		}
-	};
+	}
 
 	onGUILoaded(callback){
 		if(this.guiLoaded){
@@ -1267,9 +1285,11 @@ export class Viewer extends EventDispatcher{
 
 			let imgMapToggle = document.createElement('img');
 			imgMapToggle.src = new URL(Potree.resourcePath + '/icons/map_icon.png').href;
-			imgMapToggle.style.display = 'none';
 			imgMapToggle.onclick = e => { this.toggleMap(); };
 			imgMapToggle.id = 'potree_map_toggle';
+			imgMapToggle.title = 'Top View Map';
+			imgMapToggle.style.cssText = 'display: block; visibility: visible; opacity: 1; position: relative; z-index: 1000;';
+			imgMapToggle.classList.add('potree_map_toggle');
 
 			
 
@@ -1277,8 +1297,7 @@ export class Viewer extends EventDispatcher{
 
 			elButtons.append(imgMenuToggle);
 			elButtons.append(imgMapToggle);
-
-
+			
 			VRButton.createButton(this.renderer).then(vrButton => {
 
 				if(vrButton == null){
@@ -1315,10 +1334,26 @@ export class Viewer extends EventDispatcher{
 
 			this.mapView = new MapView(this);
 			this.mapView.init();
+			
+			// Hide map by default and ensure it stays hidden
+			const mapElement = document.getElementById('potree_map');
+			if (mapElement) {
+				mapElement.style.display = 'none';
+				mapElement.style.visibility = 'hidden';
+				mapElement.style.opacity = '0';
+			}
+			
+			// Ensure map toggle button is visible but not active
+			const mapToggle = document.getElementById('potree_map_toggle');
+			if (mapToggle) {
+				mapToggle.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; position: relative !important; z-index: 1000 !important; transition: none !important;';
+				mapToggle.classList.remove('active');
+			}
 
 			i18n.init({
 				lng: 'en',
 				resGetPath: Potree.resourcePath + '/lang/__lng__/__ns__.json',
+				
 				preload: ['en', 'fr', 'de', 'jp', 'se', 'es', 'zh', 'it','ca'],
 				getAsync: true,
 				debug: false
@@ -1964,10 +1999,7 @@ export class Viewer extends EventDispatcher{
 		
 		if(this.mapView){
 			this.mapView.update(delta);
-			if(this.mapView.sceneProjection){
-				$( "#potree_map_toggle" ).css("display", "block");
-				
-			}
+			// Removed visibility changes
 		}
 
 		TWEEN.update(timestamp);

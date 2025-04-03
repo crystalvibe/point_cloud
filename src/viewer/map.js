@@ -775,6 +775,14 @@ export class MapView{
 			this.elMap.css('display', 'block');
 			this.enabled = true;
 		}
+		
+		// Ensure map toggle button remains visible
+		const mapToggle = document.getElementById('potree_map_toggle');
+		if (mapToggle) {
+			mapToggle.style.display = 'block';
+			mapToggle.style.visibility = 'visible';
+			mapToggle.style.opacity = '1';
+		}
 	}
 
 	update (delta) {

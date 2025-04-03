@@ -1,4 +1,3 @@
-
 import * as THREE from "../../libs/three.js/build/three.module.js";
 import {GeoJSONExporter} from "../exporter/GeoJSONExporter.js"
 import {DXFExporter} from "../exporter/DXFExporter.js"
@@ -98,25 +97,6 @@ export class Sidebar{
 					closed: true,
 					maxMarkers: 1,
 					name: 'Point'});
-
-				let measurementsRoot = $("#jstree_scene").jstree().get_json("measurements");
-				let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
-				$.jstree.reference(jsonNode.id).deselect_all();
-				$.jstree.reference(jsonNode.id).select_node(jsonNode.id);
-			}
-		));
-
-		// DISTANCE
-		elToolbar.append(this.createToolIcon(
-			Potree.resourcePath + '/icons/distance.svg',
-			'[title]tt.distance_measurement',
-			() => {
-				$('#menu_measurements').next().slideDown();
-				let measurement = this.measuringTool.startInsertion({
-					showDistances: true,
-					showArea: false,
-					closed: false,
-					name: 'Distance'});
 
 				let measurementsRoot = $("#jstree_scene").jstree().get_json("measurements");
 				let jsonNode = measurementsRoot.children.find(child => child.data.uuid === measurement.uuid);
